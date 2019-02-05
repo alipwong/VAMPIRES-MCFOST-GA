@@ -37,26 +37,27 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
     # delete previous files
     subprocess.call("rm -r data_*", shell = True)
     start = time.time()
+
+    basic_cmd = ["mcfost", MCFOST_path + file_name]
+    rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
+
+    if scale_fact:
+        basic_cmd += ["-z_scaling_env", str(scale_fact)]
+        rt_cmd += ["-z_scaling_env", str(scale_fact)]
+        print("scale factor:", scale_fact)
+
     if verbose:
-        subprocess.call(["mcfost", MCFOST_path + file_name])
-        subprocess.call(["mcfost", MCFOST_path + file_name, "-img", str(wavelength), "-rt"])
-    elif scale_fact:
-        subprocess.call(["mcfost", MCFOST_path + file_name, "-z_scaling_env", str(scale_fact)], stdout=subprocess.PIPE)
-        subprocess.call(["mcfost", MCFOST_path + file_name, "-img", str(wavelength), "-rt", "-z_scaling_env", str(scale_fact)], stdout=subprocess.PIPE)
-        print(scale_fact)
+        subprocess.call(basic_cmd)
+        subprocess.call(rt_cmd)
     else:
-        subprocess.call(["mcfost", MCFOST_path + file_name], stdout = subprocess.PIPE)
-        subprocess.call(["mcfost", MCFOST_path + file_name, "-img", str(wavelength), "-rt"], stdout = subprocess.PIPE)
+        subprocess.call(basic_cmd, stdout = subprocess.PIPE)
+        subprocess.call(rt_cmd, stdout = subprocess.PIPE)
 
     subprocess.call(["scp", "-rp", "data_th", MCFOST_path], stdout=subprocess.PIPE)
     subprocess.call(["rm", "-fr", "data_th"], stdout=subprocess.PIPE)
 
     subprocess.call(["scp", "-rp", "data_"+ str(wavelength), MCFOST_path], stdout=subprocess.PIPE)
     subprocess.call(["rm", "-fr", "data_" + str(wavelength)], stdout=subprocess.PIPE)
-
-    # subprocess.Popen("mkdir " + MCFOST_path + "data_" + str(wavelength), shell=True)
-    # subprocess.Popen("mv data_" + str(wavelength) + "/* " + MCFOST_path + "data_" + str(wavelength) + "/", shell=True)
-    # subprocess.Popen("rmdir data_" + str(wavelength), shell=True)
 
     subprocess.Popen("mv *.tmp " + MCFOST_path, shell=True)
     subprocess.Popen("mv star_parameters " + MCFOST_path, shell = True)
