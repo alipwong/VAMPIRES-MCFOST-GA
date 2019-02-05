@@ -18,7 +18,6 @@ class Star:
         self.verbose = verbose
         self.scale_fact = scale_fact
 
-
         if load:
             self.data = fits.getdata(self.MCFOST_path + 'RT.fits')
         else:

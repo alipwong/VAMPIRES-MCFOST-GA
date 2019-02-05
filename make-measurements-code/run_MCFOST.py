@@ -40,6 +40,7 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     basic_cmd = ["mcfost", MCFOST_path + file_name]
     rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
+    grid_cmd = basic_cmd + ["-output_density_grid"]
 
     if scale_fact:
         basic_cmd += ["-z_scaling_env", str(scale_fact)]
@@ -48,9 +49,11 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     if verbose:
         subprocess.call(basic_cmd)
+        subprocess.call(grid_cmd)
         subprocess.call(rt_cmd)
     else:
         subprocess.call(basic_cmd, stdout = subprocess.PIPE)
+        subprocess.call(grid_cmd, stdout=subprocess.PIPE)
         subprocess.call(rt_cmd, stdout = subprocess.PIPE)
 
     subprocess.call(["scp", "-rp", "data_th", MCFOST_path], stdout=subprocess.PIPE)
@@ -61,6 +64,9 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     subprocess.Popen("mv *.tmp " + MCFOST_path, shell=True)
     subprocess.Popen("mv star_parameters " + MCFOST_path, shell = True)
+
+    subprocess.call(["scp", "-rp", "data_disk", MCFOST_path], stdout=subprocess.PIPE)
+    subprocess.call(["rm", "-fr", "data_disk"], stdout=subprocess.PIPE)
 
     finish = time.time()
     total_time = finish - start
@@ -112,7 +118,7 @@ outer radius (AU): {}
 
 
 
-def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False):
+def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False, grid = False):
     ''' Free_parameters as a dictionary.
     The wavelength must be a string, and the MCFOST_path is the location
     where everything will be created.
