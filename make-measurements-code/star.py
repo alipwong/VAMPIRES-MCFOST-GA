@@ -20,7 +20,7 @@ class Star:
 
 
         if load:
-            self.data = fits.getdata('RT.fits')
+            self.data = fits.getdata(self.MCFOST_path + 'RT.fits')
         else:
             self.data, self.time = build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
                                     verbose=self.verbose, scale_fact = self.scale_fact)
@@ -32,7 +32,7 @@ class Star:
             self.made = True
 
         if self.made:
-            self.parameters = pickle.load(open("star_parameters", "rb"))
+            self.parameters = pickle.load(open(self.MCFOST_path + "star_parameters", "rb"))
 
             self.observe()
 

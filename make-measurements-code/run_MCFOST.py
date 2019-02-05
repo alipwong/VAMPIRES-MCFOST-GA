@@ -1,4 +1,5 @@
 import sys
+import os
 import subprocess
 import pickle
 import time
@@ -47,22 +48,35 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
         subprocess.call(["mcfost", MCFOST_path + file_name], stdout = subprocess.PIPE)
         subprocess.call(["mcfost", MCFOST_path + file_name, "-img", str(wavelength), "-rt"], stdout = subprocess.PIPE)
 
+    subprocess.call(["scp", "-rp", "data_th", MCFOST_path], stdout=subprocess.PIPE)
+    subprocess.call(["rm", "-fr", "data_th"], stdout=subprocess.PIPE)
+
+    subprocess.call(["scp", "-rp", "data_"+ str(wavelength), MCFOST_path], stdout=subprocess.PIPE)
+    subprocess.call(["rm", "-fr", "data_" + str(wavelength)], stdout=subprocess.PIPE)
+
+    # subprocess.Popen("mkdir " + MCFOST_path + "data_" + str(wavelength), shell=True)
+    # subprocess.Popen("mv data_" + str(wavelength) + "/* " + MCFOST_path + "data_" + str(wavelength) + "/", shell=True)
+    # subprocess.Popen("rmdir data_" + str(wavelength), shell=True)
+
+    subprocess.Popen("mv *.tmp " + MCFOST_path, shell=True)
+    subprocess.Popen("mv star_parameters " + MCFOST_path, shell = True)
+
     finish = time.time()
     total_time = finish - start
     return total_time
 
-def load_data(wavelength):
+def load_data(wavelength, MCFOST_path):
     ''' This will open data_<wavelength> and load the fits file in data. File is stored is the same directory where the code is run. '''
     try:
-        f = open('data_' + str(wavelength) + '/RT.fits.gz')
+        f = open(MCFOST_path + 'data_' + str(wavelength) + '/RT.fits.gz')
         f.close()
-        subprocess.call(['mv', 'data_' + str(wavelength) + '/RT.fits.gz', 'RT.fits.gz'])
+        subprocess.call(['mv', MCFOST_path + 'data_' + str(wavelength) + '/RT.fits.gz', MCFOST_path + 'RT.fits.gz'])
     except OSError as e:
         print("...\nERROR in load_data.\nAttempted to open RT.fits.\nFile does not exist.\nCheck that parameters are valid.\n...")
         return None
 
-    subprocess.call(['gunzip', '-f', 'RT.fits.gz'])
-    data = fits.getdata('RT.fits')
+    subprocess.call(['gunzip', '-f', MCFOST_path + 'RT.fits.gz'])
+    data = fits.getdata(MCFOST_path + 'RT.fits')
 
     return data
 
@@ -123,7 +137,7 @@ def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST
     time = run_MCFOST(wavelength, MCFOST_path, verbose = verbose, scale_fact = scale_fact)
 
     print("Loading data...")
-    data = load_data(wavelength)
+    data = load_data(wavelength, MCFOST_path)
 
     return data, time
 
