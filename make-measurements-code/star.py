@@ -19,9 +19,10 @@ class Star:
         self.scale_fact = scale_fact
 
         if load:
-            self.data = fits.getdata(self.MCFOST_path + 'RT.fits')
+            self.data = fits.getdata(self.MCFOST_path + 'RT.fits')  # ray tracing data
+            self.grid_data = fits.getdata(self.MCFOST_path + 'grid.fits')
         else:
-            self.data, self.time = build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
+            self.data, self.grid_data, self.time = build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
                                     verbose=self.verbose, scale_fact = self.scale_fact)
 
         if self.data is None:

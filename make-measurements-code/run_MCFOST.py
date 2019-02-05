@@ -72,18 +72,19 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
     total_time = finish - start
     return total_time
 
-def load_data(wavelength, MCFOST_path):
+def load_data(MCFOST_path, data_dir, fits_file):
     ''' This will open data_<wavelength> and load the fits file in data. File is stored is the same directory where the code is run. '''
+    print(MCFOST_path + data_dir + fits_file)
     try:
-        f = open(MCFOST_path + 'data_' + str(wavelength) + '/RT.fits.gz')
+        f = open(MCFOST_path + data_dir + fits_file)
         f.close()
-        subprocess.call(['mv', MCFOST_path + 'data_' + str(wavelength) + '/RT.fits.gz', MCFOST_path + 'RT.fits.gz'])
+        subprocess.call(['mv', MCFOST_path + data_dir + fits_file, MCFOST_path + fits_file])
     except OSError as e:
-        print("...\nERROR in load_data.\nAttempted to open RT.fits.\nFile does not exist.\nCheck that parameters are valid.\n...")
+        print("...\nERROR in load_data.\nAttempted to open " + fits_file[:-3] + ".\nFile does not exist.\nCheck that parameters are valid.\n...")
         return None
 
-    subprocess.call(['gunzip', '-f', MCFOST_path + 'RT.fits.gz'])
-    data = fits.getdata(MCFOST_path + 'RT.fits')
+    subprocess.call(['gunzip', '-f', MCFOST_path + fits_file])
+    data = fits.getdata(MCFOST_path + fits_file[:-3])   # -3 gets rid of .gz
 
     return data
 
@@ -143,9 +144,11 @@ def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST
     print("Running MCFOST...")
     time = run_MCFOST(wavelength, MCFOST_path, verbose = verbose, scale_fact = scale_fact)
 
-    print("Loading data...")
-    data = load_data(wavelength, MCFOST_path)
+    print("Loading ray tracing data...")
+    rt_data = load_data(MCFOST_path, "data_{}/".format(wavelength), 'RT.fits.gz')
+    print("Loading ray grid data...")
+    grid_data = load_data(MCFOST_path, "data_disk/", "grid.fits.gz")
 
-    return data, time
+    return rt_data, grid_data, time
 
 
