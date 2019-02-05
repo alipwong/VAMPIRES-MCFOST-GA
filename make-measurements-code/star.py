@@ -1,6 +1,8 @@
 from physics import *
-from run_MCFOST import *
+import run_MCFOST
+import pickle
 from scipy import interpolate
+from astropy.io import fits
 import matplotlib.pyplot as plot
 import matplotlib.cm as cm
 
@@ -17,12 +19,12 @@ class Star:
         self.obs_data = obs_data
         self.verbose = verbose
         self.scale_fact = scale_fact
+        self.load = load
 
-        if load:
+        if self.load:
             self.data = fits.getdata(self.MCFOST_path + 'RT.fits')  # ray tracing data
-            self.grid_data = fits.getdata(self.MCFOST_path + 'grid.fits')
         else:
-            self.data, self.grid_data, self.time = build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
+            self.data, self.time = run_MCFOST.build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
                                     verbose=self.verbose, scale_fact = self.scale_fact)
 
         if self.data is None:
@@ -67,6 +69,9 @@ class Star:
         self.__calculate_max_baseline()
         self.__load_uv_coords()
         self.__sample_PVRs()
+
+    def load_data(self, data_dir, fits_file):
+        return run_MCFOST.load_data(self.MCFOST_path, data_dir, fits_file)
 
     def display_PVRs(self, overplot=True, scale="auto", interpolation=None, color_scale="auto"):
         ''' Displays the polarised visibility ratios '''

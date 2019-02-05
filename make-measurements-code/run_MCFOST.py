@@ -74,11 +74,13 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
 def load_data(MCFOST_path, data_dir, fits_file):
     ''' This will open data_<wavelength> and load the fits file in data. File is stored is the same directory where the code is run. '''
+
+    # if the data hasn't been loaded from a previous run, we need to unzip the files
     print(MCFOST_path + data_dir + fits_file)
     try:
         f = open(MCFOST_path + data_dir + fits_file)
         f.close()
-        subprocess.call(['mv', MCFOST_path + data_dir + fits_file, MCFOST_path + fits_file])
+        subprocess.call(['scp', MCFOST_path + data_dir + fits_file, MCFOST_path + fits_file])
     except OSError as e:
         print("...\nERROR in load_data.\nAttempted to open " + fits_file[:-3] + ".\nFile does not exist.\nCheck that parameters are valid.\n...")
         return None
@@ -119,7 +121,7 @@ outer radius (AU): {}
 
 
 
-def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False, grid = False):
+def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False):
     ''' Free_parameters as a dictionary.
     The wavelength must be a string, and the MCFOST_path is the location
     where everything will be created.
@@ -145,10 +147,9 @@ def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST
     time = run_MCFOST(wavelength, MCFOST_path, verbose = verbose, scale_fact = scale_fact)
 
     print("Loading ray tracing data...")
-    rt_data = load_data(MCFOST_path, "data_{}/".format(wavelength), 'RT.fits.gz')
-    print("Loading ray grid data...")
-    grid_data = load_data(MCFOST_path, "data_disk/", "grid.fits.gz")
+    data = load_data(MCFOST_path, "data_{}/".format(wavelength), 'RT.fits.gz')
 
-    return rt_data, grid_data, time
+
+    return data, time
 
 

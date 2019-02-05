@@ -23,7 +23,7 @@ VAMP_data.vhvv -= np.mean(VAMP_data.vhvv) - 1
 VAMP_data.vhvvu -= np.mean(VAMP_data.vhvvu) - 1
 
 s = star.Star(free_params, default_params, WAVELENGTH, MCFOST_path, VAMP_data, load = True, verbose = True)
-
+s.grid_data = s.load_data("data_disk/", "dust_mass_density.fits.gz")
 print(s.grid_data)
 
 # s.display_data()
