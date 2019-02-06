@@ -41,6 +41,10 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
     basic_cmd = ["mcfost", MCFOST_path + file_name]
     rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
     grid_cmd = basic_cmd + ["-output_density_grid"]
+    # I believe the following flags are equivalent:
+        # -output_density_grid
+        # -disk_struct
+        # -density_struct
 
     if scale_fact:
         basic_cmd += ["-z_scaling_env", str(scale_fact)]
