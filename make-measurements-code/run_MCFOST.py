@@ -31,7 +31,7 @@ def build_parameters(free_parameters, default_parameters_filename):
     return parameters
 
 
-def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False, scale_fact = False):
+def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False, scale_fact = False, density_file = False):
     ''' Runs MCFOST. It needs a wavelength and a parameter file.
     It will output a data_th file and a data_<wavelength> file.'''
     # delete previous files
@@ -39,17 +39,24 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
     start = time.time()
 
     basic_cmd = ["mcfost", MCFOST_path + file_name]
-    rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
     grid_cmd = basic_cmd + ["-output_density_grid"]
+    rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
     # I believe the following flags are equivalent:
         # -output_density_grid
         # -disk_struct
         # -density_struct
 
+    # density file comes first?
+    if density_file:
+        rt_cmd += ["-density_file", MCFOST_path + density_file]
+
     if scale_fact:
         basic_cmd += ["-z_scaling_env", str(scale_fact)]
         rt_cmd += ["-z_scaling_env", str(scale_fact)]
         print("scale factor:", scale_fact)
+
+
+
 
     if verbose:
         subprocess.call(basic_cmd)
@@ -125,7 +132,7 @@ outer radius (AU): {}
 
 
 
-def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False):
+def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST_path, verbose = False, scale_fact = False, density_file = False):
     ''' Free_parameters as a dictionary.
     The wavelength must be a string, and the MCFOST_path is the location
     where everything will be created.
@@ -148,7 +155,7 @@ def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST
     # run MCFOST and produce a folder with the data_th and data_<wavelength> files
     print("Deleting old data files...")
     print("Running MCFOST...")
-    time = run_MCFOST(wavelength, MCFOST_path, verbose = verbose, scale_fact = scale_fact)
+    time = run_MCFOST(wavelength, MCFOST_path, verbose = verbose, scale_fact = scale_fact, density_file = density_file)
 
     print("Loading ray tracing data...")
     data = load_data(MCFOST_path, "data_{}/".format(wavelength), 'RT.fits.gz')

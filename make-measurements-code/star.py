@@ -9,7 +9,7 @@ import matplotlib.cm as cm
 
 class Star:
 
-    def __init__(self, free_parameters, default_params, WAVELENGTH, MCFOST_path, obs_data, load=False, verbose=False, scale_fact = False):
+    def __init__(self, free_parameters, default_params, WAVELENGTH, MCFOST_path, obs_data, load=False, verbose=False, scale_fact = False, density_file = False):
 
         self.free_parameters = free_parameters
         self.n_free_parameters = len(free_parameters)
@@ -20,12 +20,13 @@ class Star:
         self.verbose = verbose
         self.scale_fact = scale_fact
         self.load = load
+        self.density_file = density_file
 
         if self.load:
             self.data = fits.getdata(self.MCFOST_path + 'RT.fits')  # ray tracing data
         else:
             self.data, self.time = run_MCFOST.build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
-                                    verbose=self.verbose, scale_fact = self.scale_fact)
+                                    verbose=self.verbose, scale_fact = self.scale_fact, density_file = self.density_file)
 
         if self.data is None:
             print("...\nStar not made\n...")
