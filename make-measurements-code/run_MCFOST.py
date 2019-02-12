@@ -48,15 +48,13 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     # density file comes first?
     if density_file:
+        basic_cmd += ["-density_file", MCFOST_path + density_file]
         rt_cmd += ["-density_file", MCFOST_path + density_file]
 
     if scale_fact:
         basic_cmd += ["-z_scaling_env", str(scale_fact)]
         rt_cmd += ["-z_scaling_env", str(scale_fact)]
         print("scale factor:", scale_fact)
-
-
-
 
     if verbose:
         subprocess.call(basic_cmd)
@@ -72,8 +70,7 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     subprocess.call(["scp", "-rp", "data_"+ str(wavelength), MCFOST_path], stdout=subprocess.PIPE)
     subprocess.call(["rm", "-fr", "data_" + str(wavelength)], stdout=subprocess.PIPE)
-
-    subprocess.Popen("mv *.tmp " + MCFOST_path, shell=True)
+    subprocess.call(["mv", "_dust_prop_th.tmp", MCFOST_path], stdout=subprocess.PIPE)
     subprocess.Popen("mv star_parameters " + MCFOST_path, shell = True)
 
     subprocess.call(["scp", "-rp", "data_disk", MCFOST_path], stdout=subprocess.PIPE)
