@@ -37,22 +37,10 @@ VAMP_data.vhvvu -= np.mean(VAMP_data.vhvvu) - 1
 # DEFINE STAR
 # -----
 
-n_rad = 100
-nz = 70
-n_az = 1
-n_grains = 1
 
 default_params = "default_parameters_star"
-free_params = {"image_symmetry":'F',
-               "central_symmetry":'F',
-               "axial_symmetry":'F',
-               "Rout": 10,
-               "n_incl": 2,
-               "imax":90,
-               "n_az":2,
-               "n_az_angles":2,
-               "az_max":90
-               }
+free_params = {"Rout":10,
+               "nbr_photons_image":1.28e8}
 
 # -----
 # CLEAR WORKSPACE
@@ -70,7 +58,8 @@ helper.clear_directory(mcfost_path)
 # density_values = np.random.rand(1, 1, 70, 100) * 1000
 
 # density file top and bottom
-density_values = density_files.cross_section_bottom(nz, n_rad)
+density_values = density_files.power(70, 100, min = 1, max = 100, power = -0.5)
+# density_values = density_files.power_shell(70, 100, min =1, max = 100, power = -0.5)
 print(density_values)
 print(density_values.shape)
 
@@ -79,8 +68,8 @@ hdu.writeto(mcfost_path + density_file, overwrite=True)
 
 # -----
 # GENERATE STAR
-# -----
+# -----®
 
-s = star.Star(free_params, default_params, WAVELENGTH, mcfost_path, VAMP_data, load = False, verbose = False, density_file=density_file)
+s = star.Star(free_params, default_params, WAVELENGTH, mcfost_path, VAMP_data, load = False, verbose = False, density_file = mcfost_path + density_file)
 s.dm_data = s.load_data("data_disk/", "dust_mass_density.fits.gz")
 

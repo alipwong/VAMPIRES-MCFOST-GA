@@ -520,8 +520,8 @@ class Star:
         ''' Obtain the polarised images'''
         self.Hp = self.I + self.Q  # horizontal
         self.Vp = self.I - self.Q  # vertical
-        self.Ap = self.I + self.U
-        self.Bp = self.I - self.U
+        self.Ap = self.I - self.U
+        self.Bp = self.I + self.U
 
     def __obtain_power_spectrums(self):
         ''' These power spectrums are the absoulate value of the square of the 2D fourier transformation of the original images. The have also been normalised and re-centered.'''

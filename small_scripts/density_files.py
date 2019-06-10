@@ -3,6 +3,28 @@
 
 import numpy as np
 
+def full(nz, n_az, n_grains):
+    ones = np.ones((1, nz, n_az, n_grains ))
+    return ones
+
+def power(n_az, n_grains, min = 1, max = 2, power = -0.5):
+    r = np.linspace(min, max, n_grains)
+    row = list(map(lambda x: pow((x + 1), power), r))
+    x = np.array(row * n_az).reshape(n_az, n_grains)
+    x = np.expand_dims(x, axis=0)
+    return np.expand_dims(x, axis=0)
+
+def power_shell(n_az, n_grains, min = 1, max = 2, power = -0.5):
+    zeros = int(np.floor(min / max * n_grains))
+    nonzeros = n_grains - zeros
+    r = np.array(np.linspace(min, max, nonzeros)).reshape(1, nonzeros)
+    row = np.concatenate((np.zeros((1, zeros)), r), axis = 1)
+    x = np.repeat(row, n_az, axis=0)
+    x = np.expand_dims(x, axis=0)
+    return np.expand_dims(x, axis=0)
+
+
+
 def bottom(n_rad, nz, n_az, n_grains):
     ones = np.ones((n_rad, nz, int(np.ceil(n_az/2)), n_grains))
     zeros = np.zeros((n_rad, nz, int(np.floor(n_az/2)), n_grains))
@@ -69,3 +91,13 @@ def grain_size(n_az, n_grains):
     grain_2 = np.array([zeros, ones])
 
     return  np.array([grain_1, grain_2])
+
+def ring(n_az, n_grains, thickness = 0.1, height = 0.1):
+    zeros = np.zeros((n_az, n_grains))
+    h = int(np.ceil(n_az * height))
+    t = int(np.ceil(n_grains * thickness))
+    for i in range(h):
+        for j in range(t):
+            zeros[i][-(j + 1)] = 1
+    nz = np.array([zeros, zeros])
+    return np.expand_dims(nz, axis=0)

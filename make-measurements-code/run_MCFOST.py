@@ -48,7 +48,7 @@ def run_MCFOST(wavelength, MCFOST_path, file_name = "star.para", verbose = False
 
     # density file comes first?
     if density_file:
-        basic_cmd += ["-density_file", MCFOST_path + density_file]
+        # basic_cmd += ["-density_file", MCFOST_path + density_file]
         rt_cmd += ["-density_file", MCFOST_path + density_file]
 
     if scale_fact:
