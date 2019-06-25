@@ -22,14 +22,14 @@ VAMP_data = VAMPIRES_data.VAMPIRES_data(VAMP_path + VAMP_data, VAMP_path + VAMP_
 VAMP_data.vhvv -= np.mean(VAMP_data.vhvv) - 1
 VAMP_data.vhvvu -= np.mean(VAMP_data.vhvvu) - 1
 
-s = star.Star(free_params, default_params, WAVELENGTH, MCFOST_path, VAMP_data, load = False, verbose = True)
+s = star.Star(free_params, default_params, WAVELENGTH, MCFOST_path, VAMP_data, load = True, verbose = True)
 
 # s.grid_data = s.load_data("data_disk/", "dust_mass_density.fits.gz")
 # print(s.grid_data)
 
-s.display_data(option = 6)
+s.display_data(option = 2)
 
-# plt.show()
+plt.show()
 
 # Additional code:
 # s.sanity_check_star(shell = True)
