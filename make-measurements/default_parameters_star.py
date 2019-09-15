@@ -53,9 +53,9 @@ class Default_parameters:
 		self.mie_hg = "1"							# 1=Mie, 2=hg (2 implies the loss of polarizarion)
 
 		# Symmetries
-		self.image_symmetry = 'T'
-		self.central_symmetry = 'T'
-		self.axial_symmetry = 'T'			# (important only if N_phi > 1)
+		self.image_symmetry = 'F'
+		self.central_symmetry = 'F'
+		self.axial_symmetry = 'F'			# (important only if N_phi > 1)
 
 		# Disk physics
 		self.dust_settling = "0"			# (0=no settling, 1=parametric, 2=Dubrulle, 3=Fromang)

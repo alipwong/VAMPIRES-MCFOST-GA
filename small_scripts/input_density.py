@@ -1,20 +1,22 @@
 # This script is used to experiment with feed a density file to MCFOST
 # cmd: mcfost <parameter_file> ­density_file <your_density_file.fits.gz> ­3D (+ any other option)
 # density dimensions: (1:n_rad, 1:nz, 1:n_az, 1:n_grains)
-
+import time
 import sys
 import numpy as np
 import subprocess
-import helper
+
 import density_files
 from astropy.io import fits
 import time
+import matplotlib.pyplot as plt
 
-mm_path = "../make-measurements-code/"   # path to where all the make-measurements code is
+mm_path = "../make-measurements/"   # path to where all the make-measurements code is
 sys.path.insert(0, mm_path)
 import star
+import helper
 import VAMPIRES_data
-
+start = time.time()
 # -----
 # DEFINE CONSTANTS AND LOAD EXTERNAL DATA
 # -----
@@ -36,11 +38,26 @@ VAMP_data.vhvvu -= np.mean(VAMP_data.vhvvu) - 1
 # -----
 # DEFINE STAR
 # -----
-
-
+spot1 = (-1, 0.3, 45, 45) #amp, sigma, theta, phi (degrees)
+spot2 = (30, 0.05, 180, 90)
+# spot2 = (-1, 1, 30, 30)
 default_params = "default_parameters_star"
-free_params = {"Rout":10,
-               "nbr_photons_image":1.28e8}
+free_params = {"nbr_photons_image":1.28e6,
+               "dust_mass":1e-6,
+               "Rin": 3,
+               "Rout" : 30,
+               "n_grains": 6,
+               "amin":50,
+               "amax":250,
+               "n_az":200,
+               "asp":1.5,
+               "az_min":0,
+               "az_max":0,
+               "n_az_angles":1,
+               "imin":90,
+               "imax":90,
+               "n_incl":1}#,
+               #"spots":[spot1]}#, spot2]}
 
 # -----
 # CLEAR WORKSPACE
@@ -48,28 +65,21 @@ free_params = {"Rout":10,
 
 helper.clear_directory(mcfost_path)
 
-
-
-# CREATE DENSITY FILE
+# -----
+# CREATE DENSITY FILE2
 # -----
 
-# generate a random density file
-# density_values = np.random.rand(n_rad, nz, n_az, n_grains)
-# density_values = np.random.rand(1, 1, 70, 100) * 1000
 
-# density file top and bottom
-density_values = density_files.power(70, 100, min = 1, max = 100, power = -0.5)
-# density_values = density_files.power_shell(70, 100, min =1, max = 100, power = -0.5)
-print(density_values)
-print(density_values.shape)
+s = star.Star(free_params, default_params, WAVELENGTH, mcfost_path, VAMP_data, load = False, verbose = True)
 
-hdu = fits.PrimaryHDU(density_values)
-hdu.writeto(mcfost_path + density_file, overwrite=True)
+end = time.time()
+print("time")
 
-# -----
-# GENERATE STAR
-# -----®
+print(end - start)
 
-s = star.Star(free_params, default_params, WAVELENGTH, mcfost_path, VAMP_data, load = False, verbose = False, density_file = mcfost_path + density_file)
-s.dm_data = s.load_data("data_disk/", "dust_mass_density.fits.gz")
+s.display_data(option = 1)
+s.display_IQUV(scale = "off")
+s.display_P(scale = "off")
 
+
+plt.show()

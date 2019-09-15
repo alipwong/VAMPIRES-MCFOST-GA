@@ -5,7 +5,8 @@ from scipy import interpolate
 from astropy.io import fits
 import matplotlib.pyplot as plot
 import matplotlib.cm as cm
-
+import matplotlib.colors as col
+from matplotlib.colors import Normalize
 
 class Star:
 
@@ -261,9 +262,10 @@ class Star:
         for i in range(4):
             plot.subplot(2, 2, i + 1)
             plot.subplots_adjust(hspace=0.4)
-            plot.imshow(images_IQUV[i], cmap="magma",
-                        extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas],
-                        interpolation=interpolation)
+            # plot.imshow(images_IQUV[i], cmap="magma",
+            #             extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas],
+            #             interpolation=interpolation)
+            plot.imshow(images_IQUV[i], cmap="magma", interpolation=interpolation)
             plot.xlabel("($mas$)")
             plot.ylabel("($mas$)")
             plot.title(titles[i])
@@ -303,6 +305,36 @@ class Star:
             plot.ylabel("($mas$)")
             plot.title(titles[i])
             plot.colorbar().set_label("$W.m^2.pixel^{-1}$")
+
+    def display_P(self, scale="auto", interpolation=None):
+
+        titles = ['I', 'Q', 'U', 'V']
+        if scale == "off":
+            half_size_mas = 0.5 * float(self.parameters.grid_nx) * self.mas_per_px
+            I, Q, U, V = [self.I, self.Q, self.U, self.V]
+        else:
+            print('Auto scaling IQUV. To turn this off, use the option scale = "off"')
+            # Calculate the radius of the outer shell in pixels
+            rout_px = np.ceil(0.5 * self.dout_mas / self.mas_per_px)  # round up to a whole number of pixels
+            if rout_px > 0.5 * int(self.parameters.grid_nx):
+                print("Envelope is larger than image. Do not autoscale.")
+            margin_px = np.ceil(0.1 * rout_px)  # add a 10 percent margin
+
+            half_size_px = rout_px + margin_px
+            center_px = np.ceil(float(self.parameters.grid_nx) / 2)
+            c1 = int(center_px - half_size_px)  # first cut off (left and top cut off pixel)
+            c2 = int(center_px + half_size_px)  # second cut off (right and bottom cut off pixel)
+            half_size_mas = half_size_px * self.mas_per_px
+
+            I, Q, U, V = [self.I[c1:c2, c1:c2], self.Q[c1:c2, c1:c2], self.U[c1:c2, c1:c2], self.V[c1:c2, c1:c2]]
+
+        P = np.power(np.power(Q, 2) + np.power(U, 2) + np.power(V, 2), 0.5)/I
+        plot.figure(figsize=(9, 6))
+        plot.imshow(P, cmap="magma", interpolation=interpolation)
+        plot.xlabel("($mas$)")
+        plot.ylabel("($mas$)")
+        plot.title("P")
+        plot.colorbar().set_label("$W.m^2.pixel^{-1}$")
 
     def display_power_spectrums(self):
 
@@ -644,7 +676,11 @@ class Star:
         # Plots the markers
         scatter_plot = ax.scatter(self.obs_data.bazims, data, s=25, marker=marker, label="observed", c=baseline_colours)
         clb = plot.colorbar(scatter_plot, label="Baseline length (m)")
-        bar_colour = clb.to_rgba(baseline_colours)
+
+        # convert the baseline colours to rgb for the errorbars
+        cmap = cm.viridis
+        norm = Normalize(vmin=baseline_colours.min(), vmax=baseline_colours.max())
+        bar_colour = cmap(norm(baseline_colours))
 
         if ylims:
             ax.set_ylim(ylims)
