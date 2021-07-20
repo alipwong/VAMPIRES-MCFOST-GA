@@ -28,16 +28,14 @@ class Star:
         else:
             self.data, self.time = run_MCFOST.build_model(self.free_parameters, self.default_parameters, WAVELENGTH, MCFOST_path,
                                     verbose=self.verbose, scale_fact = self.scale_fact, density_file = self.density_file)
-
+        self.made = False
         if self.data is None:
             print("...\nStar not made\n...")
-            self.made = False
         else:
             self.made = True
 
         if self.made:
             self.parameters = pickle.load(open(self.MCFOST_path + "star_parameters", "rb"))
-
             self.observe()
 
             # calculate some other useful constants
@@ -49,6 +47,7 @@ class Star:
             self.diameter_mas = rad_to_mas(angular_size(2 * self.radius_m, self.distance_m))
             self.din_mas = rad_to_mas(angular_size(2 * self.rin_m, self.distance_m))
             self.dout_mas = rad_to_mas(angular_size(2 * self.rout_m, self.distance_m))
+
 
             self.mas_per_px = rad_to_mas(self.rad_per_px)
 
@@ -93,16 +92,20 @@ class Star:
             # calculates how far out the maximum baseline of the mask will sit from the center of the image in pixels
             max_baseline_mask_px = int(
                 np.ceil(max(self.obs_data.blengths) / self.max_baseline * float(self.parameters.grid_nx) * 0.5))
+            # Note if your wavelength of observation is different to the wavelength of the mask,
+            # multiply self.obs_data.blengths by the factor: wavelength of mask *self.WAVELENGTH)
+
             margin_px = int(np.ceil(0.1 * max_baseline_mask_px))
             half_size_px = max_baseline_mask_px + margin_px
+
             center_px = np.ceil(float(self.parameters.grid_nx) / 2)
             c1 = int(center_px - half_size_px)  # first cut off (left and top cut off pixel)
             c2 = int(center_px + half_size_px)  # second cut off (right and bottom cut off pixel)
+
             baseline_per_px = 2 * self.max_baseline / float(
                 self.parameters.grid_nx)  # meters per px that correspond to the baseline
 
             bl_extent = baseline_per_px * half_size_px  # with of the image in baseline units (meters)
-
             ext = [-bl_extent, bl_extent, -bl_extent, bl_extent]
             PVR_Q_img = self.PVR_Q[c1:c2, c1:c2]
             PVR_U_img = self.PVR_U[c1:c2, c1:c2]
@@ -235,13 +238,24 @@ class Star:
     #	Testing Functions
     #
 
-    def display_IQUV(self, scale="auto", interpolation=None):
+    def display_HVAB(self, scale="auto", interpolation=None, vmax = None):
         ''' Displays the images corresponding to the polarised images. These are the polarised intensities, NOT frational polarisation [I, Q/I, U/I, V/I] '''
-        plot.figure(figsize=(9, 6))
+        titles = ['H', 'V', 'A', 'B']
+        images_HVAB = [self.Hp, self.Vp, self.Ap, self.Bp]
+        self.__display_imgs(images_HVAB, titles, scale = scale, interpolation = interpolation, vmax = vmax)
+
+    def display_IQUV(self, scale="auto", interpolation=None, vmax = None):
+        ''' Displays the images corresponding to the polarised images. These are the polarised intensities, NOT frational polarisation [I, Q/I, U/I, V/I] '''
         titles = ['I', 'Q', 'U', 'V']
+        images_IQUV = [self.I, self.Q , self.U , self.V]
+        self.__display_imgs(images_IQUV, titles, scale = scale, interpolation = interpolation, vmax = vmax)
+
+    def __display_imgs(self, images, titles, scale = "auto", interpolation = None, vmax = None):
+        ''' Displays the images corresponding to the polarised images. These are the polarised intensities, NOT frational polarisation [I, Q/I, U/I, V/I] '''
+
+        plot.figure(figsize=(9, 6))
         if scale == "off":
             half_size_mas = 0.5 * float(self.parameters.grid_nx) * self.mas_per_px
-            images_IQUV = [self.I, self.Q, self.U, self.V]
         else:
 
             print('Auto scaling IQUV. To turn this off, use the option scale = "off"')
@@ -257,15 +271,31 @@ class Star:
             c2 = int(center_px + half_size_px)  # second cut off (right and bottom cut off pixel)
             half_size_mas = half_size_px * self.mas_per_px
 
-            images_IQUV = [self.I[c1:c2, c1:c2], self.Q[c1:c2, c1:c2], self.U[c1:c2, c1:c2], self.V[c1:c2, c1:c2]]
+            images = [i[c1:c2, c1:c2] for i in images]
+
+            print("c1", c1)
+            print("c2", c2)
+            print("max per px", self.mas_per_px)
+            print("grid", self.parameters.grid_nx)
+
+            print("rout", rout_px)
+            print("dout mas", self.dout_mas)
+            print("margin_px", margin_px)
 
         for i in range(4):
             plot.subplot(2, 2, i + 1)
             plot.subplots_adjust(hspace=0.4)
-            # plot.imshow(images_IQUV[i], cmap="magma",
-            #             extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas],
-            #             interpolation=interpolation)
-            plot.imshow(images_IQUV[i], cmap="magma", interpolation=interpolation)
+            if vmax is None:
+                plot.imshow(images[i], cmap="magma",
+                            extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas],
+                            interpolation=interpolation)
+            else:
+                plot.imshow(images[i], cmap="magma",
+                            extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas],
+                            interpolation=interpolation,
+                            vmax = vmax,
+                            vmin = -vmax)
+            # plot.imshow(images_IQUV[i], cmap="magma", interpolation=interpolation)
             plot.xlabel("($mas$)")
             plot.ylabel("($mas$)")
             plot.title(titles[i])
@@ -279,7 +309,6 @@ class Star:
             half_size_mas = 0.5 * float(self.parameters.grid_nx) * self.mas_per_px
             images_IQUV = [self.I, self.Q, self.U]
         else:
-
             print('Auto scaling IQU. To turn this off, use the option scale = "off"')
             # Calculate the radius of the outer shell in pixels
             rout_px = np.ceil(0.5 * self.dout_mas / self.mas_per_px)  # round up to a whole number of pixels
@@ -308,7 +337,7 @@ class Star:
 
     def display_P(self, scale="auto", interpolation=None):
 
-        titles = ['I', 'Q', 'U', 'V']
+        P = np.power(np.power(self.Q, 2) + np.power(self.U, 2) + np.power(self.V, 2), 0.5)/self.I
         if scale == "off":
             half_size_mas = 0.5 * float(self.parameters.grid_nx) * self.mas_per_px
             I, Q, U, V = [self.I, self.Q, self.U, self.V]
@@ -326,15 +355,17 @@ class Star:
             c2 = int(center_px + half_size_px)  # second cut off (right and bottom cut off pixel)
             half_size_mas = half_size_px * self.mas_per_px
 
-            I, Q, U, V = [self.I[c1:c2, c1:c2], self.Q[c1:c2, c1:c2], self.U[c1:c2, c1:c2], self.V[c1:c2, c1:c2]]
+            P = P[c1:c2, c1:c2]
 
-        P = np.power(np.power(Q, 2) + np.power(U, 2) + np.power(V, 2), 0.5)/I
-        plot.figure(figsize=(9, 6))
-        plot.imshow(P, cmap="magma", interpolation=interpolation)
+
+
+        plot.figure(figsize=(6, 6))
+        plot.imshow(P, cmap="magma", interpolation=interpolation,
+                    extent=[-half_size_mas, half_size_mas, -half_size_mas, half_size_mas])
         plot.xlabel("($mas$)")
         plot.ylabel("($mas$)")
         plot.title("P")
-        plot.colorbar().set_label("$W.m^2.pixel^{-1}$")
+        plot.colorbar()
 
     def display_power_spectrums(self):
 
@@ -547,13 +578,22 @@ class Star:
         self.Q = self.data[1][0][0]
         self.U = self.data[2][0][0]
         self.V = self.data[3][0][0]
+        #
+        # self.Q *= 10
+        # self.U *= 10
 
     def __obtain_polarised_images(self):
         ''' Obtain the polarised images'''
         self.Hp = self.I + self.Q  # horizontal
         self.Vp = self.I - self.Q  # vertical
-        self.Ap = self.I - self.U
-        self.Bp = self.I + self.U
+        self.Ap = self.I + self.U
+        self.Bp = self.I - self.U
+
+        # self.Hp *= self.I
+        # self.Vp *= self.I
+        #
+        # self.Ap *= self.I
+        # self.Bp *= self.I
 
     def __obtain_power_spectrums(self):
         ''' These power spectrums are the absoulate value of the square of the 2D fourier transformation of the original images. The have also been normalised and re-centered.'''
@@ -588,8 +628,13 @@ class Star:
 
         ''' Returns the co-ordinates of where we should sample the polarised visibility ratios in units of meters.'''
 
+        # Ali note 20/7/21: self.obs_data.WAVELENGTh -> self.WAVELENGTH
+        # I think this makes sense, but could be a bug
         self.u_meters = [u * mum_to_m(self.WAVELENGTH) for u in self.obs_data.u_coords]
         self.v_meters = [v * mum_to_m(self.WAVELENGTH) for v in self.obs_data.v_coords]
+        #
+        # self.u_meters = [u * mum_to_m(0.775) for u in self.obs_data.u_coords]
+        # self.v_meters = [v * mum_to_m(0.775) for v in self.obs_data.v_coords]
         self.u_neg_meters = [-u for u in self.u_meters]
         self.v_neg_meters = [-v for v in self.v_meters]
 
@@ -623,7 +668,7 @@ class Star:
         ''' Samples the polarised visibility ratio of both Q and U'''
 
         # We assume the u and v are symmetric
-        self.U_vals = np.linspace(-1, 1, self.parameters.grid_nx) * self.max_baseline
+        self.U_vals = np.linspace(-1, 1, int(self.parameters.grid_nx)) * self.max_baseline
         self.V_vals = self.U_vals
 
         self.data_Q = self.__sample_PVR(self.PVR_Q)
@@ -703,9 +748,10 @@ class Star:
         fig = plot.figure(figsize=(15, 7))
 
         ax = fig.add_subplot(121)
+        # Ali notes: in an old version of mpl, imshow, there was a parameter called shape.
+        # This was previously shape = [10, 10], but this doesn't exist anymore and I don't remember what it did
         plot.imshow(np.log10(self.Ips), cmap="magma", interpolation="nearest",
-                    extent=[-self.max_baseline, self.max_baseline, -self.max_baseline, self.max_baseline],
-                    shape=[10, 10])
+                    extent=[-self.max_baseline, self.max_baseline, -self.max_baseline, self.max_baseline])
         plot.title("Intentisty Power Spectrum (log 10 scale)")
         plot.xlabel("u (m)")
         plot.ylabel("v (m)")
