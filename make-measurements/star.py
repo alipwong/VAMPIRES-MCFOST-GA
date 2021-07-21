@@ -7,7 +7,7 @@ import matplotlib.pyplot as plot
 import matplotlib.cm as cm
 import matplotlib.colors as col
 from matplotlib.colors import Normalize
-
+# HI LUCI
 class Star:
 
     def __init__(self, free_parameters, default_params, WAVELENGTH, MCFOST_path, obs_data, load=False, verbose=False, scale_fact = False, density_file = False):

@@ -7,8 +7,8 @@ import numpy as np
 from astropy.io import fits
 from write_MCFOST_parafile import *
 from physics import *
-
-
+import matplotlib.pyplot as plt
+# HI LUCI
 def build_parameters(free_parameters, default_parameters_filename):
     ''' Start with the default parameters as specified in default_parameters,
     and override the values of the parameters in free_parameters
@@ -24,7 +24,7 @@ def build_parameters(free_parameters, default_parameters_filename):
 
         # check to see that the parameter we want to override exists
         # additional parameters: asp (aspect ratio)
-        if para not in list(parameters.__dict__.keys()) + ["asp", "spots"]:
+        if para not in list(parameters.__dict__.keys()) + ["asp", "spots", "rhoexp"]:
             sys.exit("...\nERROR in run_MCFOST.\nAttempted to specify a parameter ({}). Parameter does not exist in default_parameters.\nCheck that all new parameters have been spelt correctly.\n...".format(para))
         else:
             # override the old parameter with the new value
@@ -66,18 +66,26 @@ def make_density_file(parameters, free_parameters, MCFOST_path):
     # load grid
     fn_grid = "{}data_disk/grid.fits.gz".format(MCFOST_path)
     hdul_grid = fits.open(fn_grid)
+
     r = hdul_grid[0].data[0,:,:,:]
     z = hdul_grid[0].data[1,:,:,:]
-    theta = hdul_grid[0].data[2,:,:,:]
 
-    x =  r * abs(np.cos(theta))
-    y =  r * abs(np.sin(theta))
+    if "asp" in free_parameters.keys():
+        theta = hdul_grid[0].data[2,:,:,:]
+
+        x =  r * abs(np.cos(theta))
+        y =  r * abs(np.sin(theta))
 
     r = np.power(np.power(r, 2) + np.power(z, 2), 0.5)
-    r = np.power(r, -0.5)
+
+    if "rhoexp" in free_parameters.keys():
+        r = np.power(r, free_parameters["rhoexp"])
+    else:
+        r = np.power(r, -2)
 
     # deal with the aspect ratio
     if "asp" in free_parameters.keys():
+
 
         # Rin: inner semi-minor axis (z)
         # rx: inner semi-major axis (x, y)
@@ -113,8 +121,7 @@ def make_density_file(parameters, free_parameters, MCFOST_path):
 
     # load grain masses
     hdu1 = fits.PrimaryHDU(r)
-    hdu2 = fits.ImageHDU(grains)
-    density_file = fits.HDUList([hdu1])#, hdu2])
+    density_file = fits.HDUList([hdu1])
     density_file[0].header["read_n_a"] = 0
 
     density_file.writeto(MCFOST_path + "density.fits", overwrite=True)
@@ -129,14 +136,18 @@ def run_MCFOST(wavelength, parameters, free_parameters, MCFOST_path, file_name =
     start = time.time()
 
     basic_cmd = ["mcfost", MCFOST_path + file_name]
-    grid_cmd = basic_cmd + ["-output_density_grid", "-3D"]
+    grid_cmd = basic_cmd + ["-output_density_grid"]
+    if int(parameters.n_az) > 1:
+        grid_cmd += ["-3D"]
     rt_cmd = basic_cmd + ["-img", str(wavelength), "-rt"]
     # I believe the following flags are equivalent:
         # -output_density_grid
         # -disk_struct
         # -density_struct
 
-    rt_cmd += ["-density_file", MCFOST_path + "density.fits", "-3D"]
+    rt_cmd += ["-density_file", MCFOST_path + "density.fits"]
+    if int(parameters.n_az) > 1:
+        rt_cmd += ["-3D"]
 
     if verbose:
         subprocess.call(basic_cmd)
@@ -240,7 +251,6 @@ def build_model(free_parameters, default_parameters_filename, wavelength, MCFOST
 
     print("Loading ray tracing data...")
     data = load_data(MCFOST_path, "data_{}/".format(wavelength), 'RT.fits.gz')
-
 
     return data, time
 
